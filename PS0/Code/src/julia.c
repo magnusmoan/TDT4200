@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <julia.h>
 
@@ -117,9 +118,13 @@ int main(int argc,char **argv) {
 	}
 
 	/* write image to disk */
-	savebmp("../bmp/julia.bmp",buffer,XSIZE,YSIZE);
+    char file_name[35];
+    sprintf(file_name, "../bmp/julia_%.3f_%.3fi.bmp", julia_C.real, julia_C.imag);
+	savebmp(file_name,buffer,XSIZE,YSIZE);
 
-	system("open ../bmp/julia.bmp");
+    char open_cmd[45] = "open ";
+    strcat(open_cmd, file_name);
+	system(open_cmd);
 
 	return 0;
 }
