@@ -122,9 +122,6 @@ int main(int argc,char **argv) {
     sprintf(file_name, "../bmp/julia_%.3f_%.3fi.bmp", julia_C.real, julia_C.imag);
 	savebmp(file_name,buffer,XSIZE,YSIZE);
 
-    char open_cmd[45] = "open ";
-    strcat(open_cmd, file_name);
-	system(open_cmd);
-
+    printf("Suksess. Se filen %s for resultat\n", file_name);
 	return 0;
 }
