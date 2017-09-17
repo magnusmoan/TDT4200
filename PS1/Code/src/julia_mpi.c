@@ -3,7 +3,8 @@
 #include <string.h>
 #include <math.h>
 #include <sys/time.h>
-#include <julia.h>
+#include <julia_mpi.h>
+#include <mpi.h>
 
 double x_start=-2.01;
 double x_end=1;
@@ -16,8 +17,6 @@ double step;
 int pixel[XSIZE*YSIZE];
 
 
-// I suggest you implement these, however you can do fine without them if you'd rather operate
-// on your complex number directly.
 complex_t square_complex(complex_t c){
 	complex_t squared;
 	squared.real = c.real*c.real - c.imag*c.imag;
@@ -50,16 +49,11 @@ complex_t add_imag(complex_t a, int b) {
 	return sum;
 }
 
-double walltime() {
-	static struct timeval t;
-	gettimeofday(&t, NULL);
-	return (t.tv_sec + 1e-6 * t.tv_usec);
-}
 
 
 // add julia_c input arg here?
-void calculate(complex_t julia_C) {
-	for(int i=0;i<XSIZE;i++) {
+void calculate(complex_t julia_C, int rank, int comm_sz, int** local_pixel) {
+	for(int i=rank;i<XSIZE;i+=comm_sz) {
 		for(int j=0;j<YSIZE;j++) {
 			/* Calculate the number of iterations until divergence for each pixel.
 			   If divergence never happens, return MAXITER */
@@ -84,14 +78,13 @@ void calculate(complex_t julia_C) {
 				z = add_complex(square_complex(z), julia_C);
 				if(++iter==MAXITER) break;
 			}
-			pixel[PIXEL(i,j)]=iter;
+			(*local_pixel)[(i/comm_sz)*YSIZE + j]=iter;
 		}
 	}
 }
 
 
 int main(int argc,char **argv) {
-	double start = walltime();
 	if(argc==1) {
 		puts("Usage: JULIA\n");
 		puts("Input real and imaginary part. ex: ./julia 0.0 -0.8");
@@ -112,24 +105,62 @@ int main(int argc,char **argv) {
 	julia_C.real = strtod(argv[1], NULL);
 	julia_C.imag = strtod(argv[2], NULL);
 
-	calculate(julia_C);
+	int comm_sz, rank;
+	double start, end;
 
-	/* create nice image from iteration counts. take care to create it upside
-	down (bmp format) */
-	unsigned char *buffer=calloc(XSIZE*YSIZE*3,1);
-	for(int i=0;i<XSIZE;i++) {
-		for(int j=0;j<YSIZE;j++) {
-			int p=((YSIZE-j-1)*XSIZE+i)*3;
-			fancycolour(buffer+p,pixel[PIXEL(i,j)]);
+	MPI_Init(NULL, NULL);
+	start = MPI_Wtime();
+	MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+	int proc_pixels = ((XSIZE - rank + comm_sz - 1)/ comm_sz)*YSIZE;
+	int* local_pixel = (int *)malloc(proc_pixels*sizeof(int));
+
+	calculate(julia_C, rank, comm_sz, &local_pixel);
+
+	if(rank == 0) {
+		for(int i = 0; i < XSIZE; i+=comm_sz) {
+			int i_rank = i/comm_sz;
+			for(int j = 0; j < YSIZE; j++) {
+				pixel[PIXEL(i,j)] = local_pixel[(i_rank)*YSIZE + j];
+			}
 		}
+
+		for(int r = 1; r < comm_sz; r++) {
+			int r_size = ((XSIZE - r + comm_sz - 1) / comm_sz )*YSIZE;
+			int* received = (int*)malloc(r_size*sizeof(int));
+			MPI_Recv(received, r_size, MPI_INT, r, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			
+			for(int i = r; i < XSIZE; i += comm_sz) {
+				for(int j = 0; j < YSIZE; j++) {
+					pixel[PIXEL(i,j)] = received[(i/comm_sz)*YSIZE + j];
+				}
+			}
+		}
+
+		/* create nice image from iteration counts. take care to create it upside
+		down (bmp format) */
+		unsigned char *buffer=calloc(XSIZE*YSIZE*3,1);
+		for(int i=0;i<XSIZE;i++) {
+			for(int j=0;j<YSIZE;j++) {
+				int p=((YSIZE-j-1)*XSIZE+i)*3;
+				fancycolour(buffer+p,pixel[PIXEL(i,j)]);
+			}
+		}
+
+		/* write image to disk */
+		char file_name[35];
+		sprintf(file_name, "../bmp/julia_%.3f_%.3fi.bmp", julia_C.real, julia_C.imag);
+		savebmp(file_name,buffer,XSIZE,YSIZE);
+		printf("Time elapsed: %lfs\n", MPI_Wtime() - start);
+
+		printf("Suksess. Se filen %s for resultat\n", file_name);
+
+	} else {
+		MPI_Send(local_pixel, proc_pixels, MPI_INT, 0, 0, MPI_COMM_WORLD);
 	}
 
-	/* write image to disk */
-	char file_name[35];
-	sprintf(file_name, "../bmp/julia_%.3f_%.3fi.bmp", julia_C.real, julia_C.imag);
-	savebmp(file_name,buffer,XSIZE,YSIZE);
-	
-	printf("Time elapsed: %lfs\n", walltime() - start);
-    	printf("Suksess. Se filen %s for resultat\n", file_name);
+	free(local_pixel);
+	MPI_Finalize();
 	return 0;
 }

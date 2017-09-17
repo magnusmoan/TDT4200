@@ -1,0 +1,3 @@
+Run "make" inside the src folder to compile
+Run program with "./julia" inside the src folder
+Result will be stored in the bmp folder
