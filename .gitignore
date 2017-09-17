@@ -1,3 +1,4 @@
 *.[oa]
 PS*/*.pdf
 !/Theory/*
+*.bmp
