@@ -3,16 +3,16 @@
 #include <stdlib.h>
 
 
-int X = 2560;
-int Y = 2048;
+int X = 10;
+int Y = 4;
 
-void calc(int rank, int comm_sz, int pixel[]) {
+void calc(int rank, int comm_sz, int** pixel) {
 	for(int i=rank; i < X; i+=comm_sz) {
 		for(int j=0; j < Y; j++) {
 			/*if(rank == 1) {
 				printf("%d %d %d\n", i, j, (i/comm_sz)*Y+j);
 			}*/
-			pixel[(i/comm_sz)*Y + j] = rank;
+			(*pixel)[(i/comm_sz)*Y + j] = rank;
 		}
 	}
 }
@@ -28,20 +28,16 @@ int main(){
 
 
 	int proc_rows = ((X - rank + comm_sz - 1) / comm_sz)*Y;
-	int pixel[proc_rows];
-	int result[size];
+	int* pixel = (int*)malloc(proc_rows*sizeof(int));
 
-	calc(rank, comm_sz, pixel);
-	if(1) {
-		printf("FOO");
-		MPI_Finalize();
-		return 0;
-	}
+	calc(rank, comm_sz, &pixel);
 
 	if(rank == 0) {
+		int* result = (int*)malloc(size*sizeof(int));
 		for(int i = 0; i < X; i+= comm_sz) {
 			for(int j = 0; j < Y; j++) {
-				result[i+(j*X)] = pixel[(i/comm_sz)*X+j];
+				printf("%d\n", i+(j*X));
+				result[i+(j*X)] = pixel[(i/comm_sz)*Y+j];
 			}
 		}
 
@@ -63,13 +59,15 @@ int main(){
 			printf("\n");
 		}
 		for(int i = 0; i < size; i++) {
-			printf("%d", result[i]);
+			printf("%d ", result[i]);
 		}
+		free(result);
 
 	} else {
 		MPI_Send(pixel, proc_rows, MPI_INT, 0, 0, MPI_COMM_WORLD);
-	}
+}
 
+	free(pixel);
 	MPI_Finalize();
 	
 	return 0;

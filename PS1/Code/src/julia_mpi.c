@@ -14,9 +14,6 @@ double ylower;
 double ycenter=1e-6;
 double step;
 
-int pixel[XSIZE*YSIZE];
-
-
 complex_t square_complex(complex_t c){
 	complex_t squared;
 	squared.real = c.real*c.real - c.imag*c.imag;
@@ -119,23 +116,26 @@ int main(int argc,char **argv) {
 	calculate(julia_C, rank, comm_sz, &local_pixel);
 
 	if(rank == 0) {
+		int* pixel = (int*)malloc(XSIZE*YSIZE*sizeof(int));
 		for(int i = 0; i < XSIZE; i+=comm_sz) {
 			int i_rank = i/comm_sz;
 			for(int j = 0; j < YSIZE; j++) {
-				pixel[PIXEL(i,j)] = local_pixel[(i_rank)*YSIZE + j];
+				pixel[i + j*XSIZE] = local_pixel[(i_rank)*YSIZE + j];
 			}
 		}
 
 		for(int r = 1; r < comm_sz; r++) {
 			int r_size = ((XSIZE - r + comm_sz - 1) / comm_sz )*YSIZE;
 			int* received = (int*)malloc(r_size*sizeof(int));
-			MPI_Recv(received, r_size, MPI_INT, r, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Status status;
+			MPI_Recv(received, r_size, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
 			
-			for(int i = r; i < XSIZE; i += comm_sz) {
+			for(int i = status.MPI_SOURCE; i < XSIZE; i += comm_sz) {
 				for(int j = 0; j < YSIZE; j++) {
-					pixel[PIXEL(i,j)] = received[(i/comm_sz)*YSIZE + j];
+					pixel[i +j*XSIZE] = received[(i/comm_sz)*YSIZE + j];
 				}
 			}
+			free(received);
 		}
 
 		/* create nice image from iteration counts. take care to create it upside
@@ -144,7 +144,7 @@ int main(int argc,char **argv) {
 		for(int i=0;i<XSIZE;i++) {
 			for(int j=0;j<YSIZE;j++) {
 				int p=((YSIZE-j-1)*XSIZE+i)*3;
-				fancycolour(buffer+p,pixel[PIXEL(i,j)]);
+				fancycolour(buffer+p,pixel[i + j*XSIZE]);
 			}
 		}
 
@@ -155,6 +155,7 @@ int main(int argc,char **argv) {
 		printf("Time elapsed: %lfs\n", MPI_Wtime() - start);
 
 		printf("Suksess. Se filen %s for resultat\n", file_name);
+		free(pixel);
 
 	} else {
 		MPI_Send(local_pixel, proc_pixels, MPI_INT, 0, 0, MPI_COMM_WORLD);
