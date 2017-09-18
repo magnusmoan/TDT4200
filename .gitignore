@@ -2,3 +2,4 @@
 PS*/*.pdf
 !/Theory/*
 *.bmp
+*.out

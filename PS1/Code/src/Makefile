@@ -1,6 +1,6 @@
 IDIR =../include
 CC=mpicc
-CFLAGS=-I$(IDIR) -std=c99
+CFLAGS=-I$(IDIR) -std=c99 -D S=$(s)
 
 ODIR=obj
 LDIR =../lib

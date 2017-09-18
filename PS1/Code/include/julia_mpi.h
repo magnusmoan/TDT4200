@@ -6,11 +6,15 @@
 #include <math.h>
 #include <bitmap.h>
 
-//#define S 3
-#define XSIZE 7680 //2560
-#define YSIZE 6144 //2048*S
+#ifndef S
+#define S 1
+#endif
 
-#define MAXITER 765 //255*S
+//#define S 3
+#define XSIZE (2560*S) //7680 //2560
+#define YSIZE (2048*S) 6144 //2048*S
+
+#define MAXITER (765*S) //255*S
 
 // note that we are extra careful with preprocessor macros. Adding parenthesises is never the
 // wrong choice.
