@@ -1,5 +1,10 @@
 IDIR =../include
 CC=mpicc
+
+ifeq ($(s),)
+	s=1
+endif
+
 CFLAGS=-I$(IDIR) -std=c99 -D S=$(s)
 
 ODIR=obj
