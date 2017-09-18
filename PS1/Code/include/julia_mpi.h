@@ -12,7 +12,7 @@
 
 //#define S 3
 #define XSIZE (2560*S) //7680 //2560
-#define YSIZE (2048*S) 6144 //2048*S
+#define YSIZE (2048*S) //6144 //2048*S
 
 #define MAXITER (765*S) //255*S
 
