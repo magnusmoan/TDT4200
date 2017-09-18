@@ -80,6 +80,61 @@ void calculate(complex_t julia_C, int rank, int comm_sz, int** local_pixel) {
 	}
 }
 
+void parallel_calculate(complex_t julia_C, int rank, int comm_sz, int** pixel) {
+	int proc_pixels = ((XSIZE - rank + comm_sz - 1)/ comm_sz)*YSIZE;
+	int* local_pixel = (int *)malloc(proc_pixels*sizeof(int));
+
+	calculate(julia_C, rank, comm_sz, &local_pixel);
+
+	if(rank == 0) {
+		for(int i = 0; i < XSIZE; i+=comm_sz) {
+			int i_rank = i/comm_sz;
+			for(int j = 0; j < YSIZE; j++) {
+				(*pixel)[i + j*XSIZE] = local_pixel[(i_rank)*YSIZE + j];
+			}
+		}
+
+		for(int r = 1; r < comm_sz; r++) {
+			int r_size = ((XSIZE - r + comm_sz - 1) / comm_sz )*YSIZE;
+			int* received = (int*)malloc(r_size*sizeof(int));
+			MPI_Status status;
+			MPI_Recv(received, r_size, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+			
+			for(int i = status.MPI_SOURCE; i < XSIZE; i += comm_sz) {
+				for(int j = 0; j < YSIZE; j++) {
+					(*pixel)[i +j*XSIZE] = received[(i/comm_sz)*YSIZE + j];
+				}
+			}
+			free(received);
+		}
+	} else {
+		MPI_Send(local_pixel, proc_pixels, MPI_INT, 0, 0, MPI_COMM_WORLD);
+	}
+
+	free(local_pixel);
+
+}
+
+void create_bmp(int** pixel, complex_t julia_C) {
+	/* create nice image from iteration counts. take care to create it upside
+	down (bmp format) */
+	unsigned char *buffer=calloc(XSIZE*YSIZE*3,1);
+	for(int i=0;i<XSIZE;i++) {
+		for(int j=0;j<YSIZE;j++) {
+			int p=((YSIZE-j-1)*XSIZE+i)*3;
+			fancycolour(buffer+p,(*pixel)[i + j*XSIZE]);
+		}
+	}
+
+	/* write image to disk */
+	char file_name[35];
+	sprintf(file_name, "../bmp/julia_%.3f_%.3fi.bmp", julia_C.real, julia_C.imag);
+	savebmp(file_name,buffer,XSIZE,YSIZE);
+
+	printf("Suksess. Se filen %s for resultat\n", file_name);
+
+}
+
 
 int main(int argc,char **argv) {
 	if(argc==1) {
@@ -94,6 +149,7 @@ int main(int argc,char **argv) {
 	yupper=ycenter+(step*YSIZE)/2;
 	ylower=ycenter-(step*YSIZE)/2;
 
+
 	// Unlike the mandelbrot set where C is the coordinate being iterated, the
 	// julia C is the same for all points and can be chosed arbitrarily
 	complex_t julia_C;
@@ -102,66 +158,32 @@ int main(int argc,char **argv) {
 	julia_C.real = strtod(argv[1], NULL);
 	julia_C.imag = strtod(argv[2], NULL);
 
-	int comm_sz, rank;
-	double start, end;
+	int comm_sz, rank, *pixel;
+	double local_start, local_finish, local_elapsed, elapsed;
 
 	MPI_Init(NULL, NULL);
-	start = MPI_Wtime();
 	MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-	int proc_pixels = ((XSIZE - rank + comm_sz - 1)/ comm_sz)*YSIZE;
-	int* local_pixel = (int *)malloc(proc_pixels*sizeof(int));
-
-	calculate(julia_C, rank, comm_sz, &local_pixel);
+	MPI_Barrier(MPI_COMM_WORLD);
+	local_start = MPI_Wtime();
 
 	if(rank == 0) {
-		int* pixel = (int*)malloc(XSIZE*YSIZE*sizeof(int));
-		for(int i = 0; i < XSIZE; i+=comm_sz) {
-			int i_rank = i/comm_sz;
-			for(int j = 0; j < YSIZE; j++) {
-				pixel[i + j*XSIZE] = local_pixel[(i_rank)*YSIZE + j];
-			}
-		}
-
-		for(int r = 1; r < comm_sz; r++) {
-			int r_size = ((XSIZE - r + comm_sz - 1) / comm_sz )*YSIZE;
-			int* received = (int*)malloc(r_size*sizeof(int));
-			MPI_Status status;
-			MPI_Recv(received, r_size, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
-			
-			for(int i = status.MPI_SOURCE; i < XSIZE; i += comm_sz) {
-				for(int j = 0; j < YSIZE; j++) {
-					pixel[i +j*XSIZE] = received[(i/comm_sz)*YSIZE + j];
-				}
-			}
-			free(received);
-		}
-
-		/* create nice image from iteration counts. take care to create it upside
-		down (bmp format) */
-		unsigned char *buffer=calloc(XSIZE*YSIZE*3,1);
-		for(int i=0;i<XSIZE;i++) {
-			for(int j=0;j<YSIZE;j++) {
-				int p=((YSIZE-j-1)*XSIZE+i)*3;
-				fancycolour(buffer+p,pixel[i + j*XSIZE]);
-			}
-		}
-
-		/* write image to disk */
-		char file_name[35];
-		sprintf(file_name, "../bmp/julia_%.3f_%.3fi.bmp", julia_C.real, julia_C.imag);
-		savebmp(file_name,buffer,XSIZE,YSIZE);
-		printf("Time elapsed: %lfs\n", MPI_Wtime() - start);
-
-		printf("Suksess. Se filen %s for resultat\n", file_name);
-		free(pixel);
-
-	} else {
-		MPI_Send(local_pixel, proc_pixels, MPI_INT, 0, 0, MPI_COMM_WORLD);
+		pixel = (int*)malloc(XSIZE*YSIZE*sizeof(int));
 	}
 
-	free(local_pixel);
+	parallel_calculate(julia_C, rank, comm_sz, &pixel);
+
+	local_finish = MPI_Wtime();
+	local_elapsed = local_finish - local_start;
+
+	MPI_Reduce(&local_elapsed, &elapsed, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
+	if(rank == 0) {
+		printf("Elapsed time for calculating pixels: %lf seconds\n", elapsed);
+		create_bmp(&pixel, julia_C);
+		free(pixel);
+	}
+
 	MPI_Finalize();
 	return 0;
 }

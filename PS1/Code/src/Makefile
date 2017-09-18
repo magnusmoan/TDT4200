@@ -10,7 +10,7 @@ LIBS=-lm
 _DEPS = bitmap.h julia_mpi.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = bitmap.o julia_mpi.o 
+_OBJ = bitmap.o julia_mpi.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 
