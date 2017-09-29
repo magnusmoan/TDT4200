@@ -17,6 +17,11 @@ module load OpenMPI/2.0.2
 make clean
 make
 
-echo Starting run
-mpirun -np 16 ./RPSparallel
+echo Starting run with 2 processors
+mpirun -np 2 ./RPSparallel
  
+echo Starting run with 4 processors
+mpirun -np 4 ./RPSparallel
+
+echo Starting run with 16 processors
+mpirun -np 16 ./RPSparallel
