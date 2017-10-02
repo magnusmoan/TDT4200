@@ -69,8 +69,8 @@ cell** petri;
 
 
 // For sending and receiving in the border exchange
-cell* send;
-cell* recv;
+cell* send_buffer;
+cell* recv_buffer;
 
 int main(int argc, char** argv){
 
@@ -158,8 +158,8 @@ int main(int argc, char** argv){
 
 	free(local_petri_A);
 	free(local_petri_B);
-	free(send);
-	free(recv);
+	free(send_buffer);
+	free(recv_buffer);
 
   exit(0);
 }
@@ -212,8 +212,8 @@ void initialize(){
 
 	// Allocating space for send and recv used in the border exchange
 	int cells_to_send = 2*(p_local_petri_y_dim) + 2*(p_local_petri_x_dim);	
-	send = malloc(cells_to_send*sizeof(cell));
-	recv = malloc(cells_to_send*sizeof(cell));
+	send_buffer = malloc(cells_to_send*sizeof(cell));
+	recv_buffer = malloc(cells_to_send*sizeof(cell));
 
 	// Setting all cells in the A buffer to be white
 	for(int i = 0; i < p_local_petri_x_dim_with_border*p_local_petri_y_dim_with_border; i++) {
@@ -250,45 +250,45 @@ void exchange_borders(cell* local_petri){
 	// Adding the borders and rows that are going to be sent to the send pointer
 	int send_index = 0;
 	for(int ii = 1; ii < p_local_petri_x_dim + 1; ii++) {
-		send[send_index] = local_petri[get_north_row_index(ii)];
-		send[send_index + p_local_petri_x_dim] = local_petri[get_south_row_index(ii)];
+		send_buffer[send_index] = local_petri[get_north_row_index(ii)];
+		send_buffer[send_index + p_local_petri_x_dim] = local_petri[get_south_row_index(ii)];
 		send_index++;
 	}
 	send_index += p_local_petri_x_dim;
 
 	for(int ii = 1; ii < p_local_petri_y_dim + 1; ii++) {
-		send[send_index] = local_petri[get_west_column_index(ii)];
-		send[send_index + p_local_petri_y_dim] = local_petri[get_east_column_index(ii)];
+		send_buffer[send_index] = local_petri[get_west_column_index(ii)];
+		send_buffer[send_index + p_local_petri_y_dim] = local_petri[get_east_column_index(ii)];
 		send_index++;
 	}
 	////////////////////////////////
 	////////////////////////////////
 	
 	// Sending and receiving
-	MPI_Neighbor_alltoallw(send, sizes, send_dis, send_types, recv, sizes, recv_dis, recv_types, cart_comm);
+	MPI_Neighbor_alltoallw(send_buffer, sizes, send_dis, send_types, recv_buffer, sizes, recv_dis, recv_types, cart_comm);
 
 	// Handling the received data
 	if(p_north >= 0) {
 		for(int ii = 0; ii < p_local_petri_y_dim; ii++) {
-			local_petri[ii+1] = recv[ii];
+			local_petri[ii+1] = recv_buffer[ii];
 		}
 	}
 	if(p_south >= 0) {
 		int bottom_row_index = p_local_petri_x_dim_with_border*(p_local_petri_y_dim_with_border-1)+1;
 		for(int ii = 0; ii < p_local_petri_x_dim; ii++) {
-			local_petri[bottom_row_index + ii] = recv[(p_local_petri_y_dim) + ii];
+			local_petri[bottom_row_index + ii] = recv_buffer[(p_local_petri_y_dim) + ii];
 		}
 	}
 	if(p_west >= 0) {
 		for(int ii = 0; ii < p_local_petri_y_dim; ii++) {
-			local_petri[(ii+1)*p_local_petri_x_dim_with_border] = recv[2*p_local_petri_y_dim + ii];
+			local_petri[(ii+1)*p_local_petri_x_dim_with_border] = recv_buffer[2*p_local_petri_y_dim + ii];
 		}
 	}
 	if(p_east >= 0) {
 		int bottom_row_index = p_local_petri_x_dim_with_border*(p_local_petri_y_dim_with_border-1)+1;
 		for(int ii = 0; ii < p_local_petri_y_dim; ii++) {
 			local_petri[(ii+2)*p_local_petri_x_dim_with_border - 1] = 
-				recv[2*p_local_petri_y_dim + p_local_petri_x_dim + ii];
+				recv_buffer[2*p_local_petri_y_dim + p_local_petri_x_dim + ii];
 		}
 	}
 }
