@@ -142,7 +142,7 @@ int main(int argc, char** argv){
 
 	MPI_Reduce(&local_elapsed, &elapsed, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 	if(rank == 0) {
-		printf("Elapsed time: %lf\n seconds", elapsed);
+		printf("Elapsed time: %lf seconds\n", elapsed);
 	}
 
 	MPI_Finalize();
