@@ -1,41 +1,33 @@
-CC=gcc
-ODIR=src/obj
-IDIR=include
-SRCDIR=src
-CFLAGS=-I$(IDIR) -std=c99 -Wall
+CFLAGS+= -std=c99 -g -O3
 
-_DEPS = bitmap.h CA.h RPS.h
-DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
+# by uncommenting this line the preprocessor will see #ifdef DEBUG as true
+# CFLAGS+= -DDEBUG
+util_objects = CA.o bitmap.o 
+serial_objects = RPS_serial.o
+parallel_pth = RPS_pt.o
 
-_OBJ = bitmap.o CA.o RPS.o
-OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
+SHELL := /bin/bash
 
-_SRC = bitmap.c CA.c RPS.c
-SRC= $(patsubst %,$(SRCDIR)/%,$(_SRC))
+serial : $(util_objects) $(serial_objects)
+	gcc -std=c99 -g -O3 $(util_objects) $(serial_objects) -o serialRPS.out
 
-$(ODIR)/%.o: %.c $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS)
+omp :
+	gcc -g -Wall -fopenmp CA.h CA.c bitmap.h bitmap.c RPS_serial.c RPS.h -o ompRPS.out
 
+pth : $(util_objects) $(parallel_pth)
+	gcc -std=c99 -g -O3 -pthread $(util_objects) $(parallel_pth) -o pthreadRPS.out
 
-serial: $(OBJ)
-	$(CC) -std=c99 -g -O3 $^ $(CFLAGS) -v -o $@
+#pth :
+#	gcc -std=c99 -g -O3 -pthread CA.h CA.c bitmap.h bitmap.c RPS_pt.c RPS.h -o pthreadRPS.out
 
-omp: $(OBJ)
-	$(CC) -fopenmp -o ompRPS.out $^ $(CFLAGS)
-
-pth: $(OBJ)
-	$(CC) -pthread -o pthreadRPS.out $^ $(CFLAGS)
-
-all: serial omp pth
-
-remake: clean all
+remake : clean all
 
 # We add .PHONY when a target doesn't actually create any output. In this case we just run a shell
 # command, removing all object files, i.e files ending on .o
 # the * syntax means [anything].o
 .PHONY : clean
 clean :
-	rm -f src/obj/*.o && rm -f src/*.gch && rm -f src/data/*.bmp && rm -f src/*.mp4
+	rm -f *.o && rm -f *.gch && rm -f data/*.bmp && rm -f *.mp4
 
 # Finally, the test target. Builds the 'all' target, then runs the test script on the output
 .PHONY : video
