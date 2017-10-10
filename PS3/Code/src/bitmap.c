@@ -1,4 +1,4 @@
-#include <bitmap.h>
+#include "bitmap.h"
 
 #define TRANS(x, y) ((x)+(y)*IMG_X)
 

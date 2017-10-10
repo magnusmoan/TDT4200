@@ -2,7 +2,7 @@ CC=gcc
 ODIR=src/obj
 IDIR=include
 SRCDIR=src
-CFLAGS=-I$(IDIR) -std=c99
+CFLAGS=-I$(IDIR) -std=c99 -Wall
 
 _DEPS = bitmap.h CA.h RPS.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
@@ -13,14 +13,12 @@ OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 _SRC = bitmap.c CA.c RPS.c
 SRC= $(patsubst %,$(SRCDIR)/%,$(_SRC))
 
-$(warning $(SRC))
-
-$(ODIR)/%.o: $(SRC) $(DEPS)
+$(ODIR)/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 
 serial: $(OBJ)
-	$(CC) -o $@ $^ $(CFLAGS) -v
+	$(CC) -std=c99 -g -O3 $^ $(CFLAGS) -v -o $@
 
 omp: $(OBJ)
 	$(CC) -fopenmp -o ompRPS.out $^ $(CFLAGS)

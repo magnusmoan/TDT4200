@@ -1,4 +1,4 @@
-#include <RPS.h>
+#include "RPS.h"
 #include <time.h>
 
 void swap_petris();
@@ -34,6 +34,7 @@ int main(int argc, char** argv){
         swap_petris();
     }
     make_bmp(petri_A, 0);
+    return 0;
 
 }
 

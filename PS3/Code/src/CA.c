@@ -1,4 +1,4 @@
-#include <CA.h>
+#include "CA.h"
 
 #define TRANS(x, y) ((x)+(y)*IMG_X)
 
