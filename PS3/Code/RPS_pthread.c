@@ -94,12 +94,12 @@ void* iterate(void* rank) {
             for(int jj = 0; jj < thread_count-1; jj++) {
                 sem_post(&barrier_sem);
             }
+            swap_petris();
         } else {
             counter++;
             sem_post(&count_sem);
             sem_wait(&barrier_sem);
         }
-        swap_petris();
     }
    return NULL; 
 }

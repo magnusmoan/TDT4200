@@ -75,12 +75,12 @@ cell pick_neighbor(int x, int y, cell* image, int chosen){
   return image[TRANS(x + c_x - 1,y + c_y - 1)];
 }
 
-void iterate_image(cell* old_image, cell* next_image){
+void iterate_image(cell* old_image, cell* next_image, int start, int stop){
 
   int seed = rand();
   seed = (seed * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL;
 
-  for(int xx = 1; xx < IMG_X - 2; xx++){
+  for(int xx = start; xx < stop; xx++){
     for(int yy = 1; yy < IMG_Y - 2; yy++){
       next_image[TRANS(xx,yy)] = next_cell(xx, yy, old_image, (seed % 8) + 8*(seed < 8));
     }
