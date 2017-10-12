@@ -86,16 +86,16 @@ void* iterate(void* rank) {
     int start = my_rank * rows_per_thread + 1;
     int end = start + rows_per_thread; 
     
-    for(int ii = 0; ii < ITERATIONS; ii++) {
+    for(int ii = 0; ii < 3000; ii++) {
         iterate_image(petri_A, petri_B, start, end);
         sem_wait(&count_sem);
         if(counter == thread_count-1) {
             counter = 0;
+            swap_petris();
             sem_post(&count_sem);
             for(int jj = 0; jj < thread_count-1; jj++) {
                 sem_post(&barrier_sem);
             }
-            swap_petris();
         } else {
             counter++;
             sem_post(&count_sem);

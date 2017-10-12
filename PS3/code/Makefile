@@ -18,9 +18,9 @@ _SRC = bitmap.c RPS_pthread.c RPS_omp.c CA.c
 SRC = $(patsubst %,$(SDIR)/%,$(_SRC))
 
 $(ODIR)/%.o: ./src/%.c $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) -c -o $@ $< $(CFLAGS) -fopenmp
 
-#SHELL := /bin/bash
+SHELL := /bin/bash
 
 omp : $(UTIL_OBJ) $(OMP_OBJ)
 	$(CC) $(CFLAGS) $^ -fopenmp -o ompRPS.out

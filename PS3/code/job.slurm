@@ -2,8 +2,7 @@
 #SBATCH --partition=TRAINING
 #SBATCH --time=00:05:00
 #SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
+#SBATCH --ntasks-per-node=16
 #SBATCH --mem=12000
 #SBATCH --job-name="RPS_pthread"
 #SBATCH --output=threading_%.out
