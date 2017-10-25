@@ -1,22 +1,32 @@
-CFLAGS+= -std=c99 -g -O3
+ODIR=./src/obj
+IDIR=./include
+SDIR=./src
+CFLAGS+= -std=c99 -g -O3 -I$(IDIR)
+CC=gcc
 
-# by uncommenting this line the preprocessor will see #ifdef DEBUG as true
-# CFLAGS+= -DDEBUG
-util_objects = CA.o bitmap.o 
-serial_objects = RPS_serial.o
-parallel_pth = RPS_pthread.o
-omp_objects = RPS_omp.o
+_DEPS = bitmap.h CA.h RPS.h
+DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
+
+_UTIL_OBJ = CA.o bitmap.o
+_PTHREAD_OBJ = RPS_pthread.o
+_OMP_OBJ = RPS_omp.o
+UTIL_OBJ = $(patsubst %,$(ODIR)/%,$(_UTIL_OBJ))
+PTHREAD_OBJ = $(patsubst %,$(ODIR)/%,$(_PTHREAD_OBJ))
+OMP_OBJ = $(patsubst %,$(ODIR)/%,$(_OMP_OBJ))
+
+_SRC = bitmap.c RPS_pthread.c RPS_omp.c CA.c
+SRC = $(patsubst %,$(SDIR)/%,$(_SRC))
+
+$(ODIR)/%.o: ./src/%.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS) -fopenmp
 
 SHELL := /bin/bash
 
-serial : $(util_objects) $(serial_objects)
-	gcc -std=c99 -g -O3 $(util_objects) $(serial_objects) -o serialRPS.out
+omp : $(UTIL_OBJ) $(OMP_OBJ)
+	$(CC) $(CFLAGS) $^ -fopenmp -o ompRPS.out
 
-omp : $(util_objects) $(omp_objects)
-	gcc -std=c99 -g  -fopenmp $(util_objects) $(omp_objects) -o ompRPS.out
-
-pth : $(util_objects) $(parallel_pth)
-	gcc -std=c99 -g -O3 -pthread $(util_objects) $(parallel_pth) -o pthreadRPS.out
+pth : $(UTIL_OBJ) $(PTHREAD_OBJ)
+	$(CC) $(CFLAGS) $^ -pthread -o pthreadRPS.out
 
 
 remake : clean all
@@ -26,13 +36,5 @@ remake : clean all
 # the * syntax means [anything].o
 .PHONY : clean
 clean :
-	rm -f *.o && rm -f *.gch && rm -f data/*.bmp && rm -f *.mp4 && rm -f *.out
+	rm -f src/obj/*.o && rm -f *.gch && rm -f *.bmp && rm -f *.mp4 && rm -f *.out
 
-# Finally, the test target. Builds the 'all' target, then runs the test script on the output
-.PHONY : video
-video : clean all
-	./myProgram && ffmpeg -framerate 60 -i data/CA-%000d.bmp -c:v libx264 -profile:v high -crf 20 -pix_fmt yuv420p output.mp4
-
-.PHONY : run
-run : clean omp
-	./meme.out
