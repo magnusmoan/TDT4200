@@ -1,24 +1,17 @@
 #!/bin/sh
 #SBATCH --partition=TRAINING
-#SBATCH --time=00:05:00
+#SBATCH --time=00:15:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=16
 #SBATCH --mem=12000
+# Memory per node specification is in MB. It is optional.
+# The default limit is 3000MB per core.
 #SBATCH --job-name="RPS_pthread"
-#SBATCH --output=threading_%.out
 #SBATCH --mail-user=magnusnm@stud.ntnu.no
 #SBATCH --mail-type=ALL
 
 module load GCC
 make clean
-
 make omp
-echo Starting omp
+echo Starting omp!
 ./ompRPS.out 16
-echo Done with omp
-
-make pth
-echo Starting pthread
-./pthreadRPS.out 16
-echo Done with pthread
-
