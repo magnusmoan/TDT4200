@@ -99,7 +99,7 @@ __device__ float2 calculate_velocity_change_planet(float4 p, float4 q){
 
 // TODO 5. Calculate the change in velocity for my_planet, caused by the interactions with a block of planets
 __device__ float2 calculate_velocity_change_block(float4 my_planet, float4* shared_planets){
-    float2 v = float2(0.0, 0.0);
+    float2 v = {0.0f, 0.0f};
     int i;
 
     for(i = 0; i < blockDim.x; ++i) {
