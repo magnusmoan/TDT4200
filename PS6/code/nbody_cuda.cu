@@ -121,6 +121,8 @@ int main(int argc, char** argv){
     }
 
     // TODO 3. Transfer data back to host
+    cudaMemcpy(velocities, velocities_d, sizeof(float2)*num_planets, cudaMemcpyDeviceToHost);
+    cudaMemcpy(planets, planets_d, sizeof(float4)*num_planets, cudaMemcpyDeviceToHost);
 
     // Output
     write_planets(num_timesteps);
