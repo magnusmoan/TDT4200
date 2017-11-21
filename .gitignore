@@ -1,5 +1,7 @@
 *.[oa]
+*.zip
 PS*/*.pdf
 !/Theory/*
 *.bmp
 *.out
+*.DS_Store
