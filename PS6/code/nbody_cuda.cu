@@ -106,6 +106,11 @@ int main(int argc, char** argv){
     read_planets();
 
     // TODO 1. Allocate device memory, and transfer data to device 
+    cudaMalloc(&velocities_d, sizeof(float2)*num_planets);
+    cudaMalloc(&planets_d, sizeof(float4)*num_planets);
+
+    cudaMemcpy(velocities_d, velocities, sizeof(float2)*num_planets, cudaMemcpyHostToDevice);
+    cudaMemcpy(planets_d, planets, sizeof(float4)*num_planets, cudaMemcpyHostToDevice);
 
     // Calculating the number of blocks
     int num_blocks = num_planets/BLOCK_SIZE + ((num_planets%BLOCK_SIZE == 0) ? 0 : 1);
