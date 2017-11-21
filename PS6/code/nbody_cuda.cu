@@ -81,21 +81,59 @@ void write_planets(int timestep){
 
 // TODO 6. Calculate the change in velocity for p, caused by the interaction with q
 __device__ float2 calculate_velocity_change_planet(float4 p, float4 q){
+    float2 vChange;
+    float2 acc;
+
+    acc.x = q.x - p.x;
+    acc.y = q.y - p.y;
+
+    float dist = sqrt(acc.x*acc.x + acc.y*acc.y);
+    float cubed = dist*dist*dist;
+
+    vChange.x = dT*G*q.mass/cubed * dist.x;
+    vChange.y = dT*G*q.mass/cubed * dist.y;
+
+    return vChange;
 
 }
 
 // TODO 5. Calculate the change in velocity for my_planet, caused by the interactions with a block of planets
 __device__ float2 calculate_velocity_change_block(float4 my_planet, float4* shared_planets){
+    float2 v = float2(0.0, 0.0);
+    int i;
 
+    for(i = 0; i < blockDim.x; ++i) {
+        float2 change = calculate_velocity_change_planet(my_planet, shared_planets[i]);
+	v.x += change.x;
+	v.y += change.y;
+    }
+
+    return v;
 }
 
 // TODO 4. Update the velocities by calculating the planet interactions
 __global__ void update_velocities(float4* planets, float2* velocities, int num_planets){
+    int id = threadIdx.x + blockIdx.x * blockDim.x;
+    float4 planet = planets[id];
 
+    __shared__ float4 shared_planets[BLOCK_SIZE];
+    int i;
+    for(i = 0; i < num_planets; i+=blockDim.x) {
+	shared_planets[threadIdx.x] = planets[i + threadIdx.x];
+	__syncthreads();
+
+	float2 v = calculate_velocity_change_block(my_planet, shared_planets);
+	velocities[id].x += v.x;
+	velocities[id].y += v.y;
+	__syncthreads();
+    }
 }
 
 // TODO 7. Update the positions of the planets using the new velocities
 __global__ void update_positions(float4* planets, float2* velocities, int num_planets){
+    int id = threadIdx.x + blockIdx.x * blockDim.x;
+    planets[id].x += velocities[id].x * dT;
+    planets[id].y += velocities[id].y * dT;
 
 }
 
