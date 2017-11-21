@@ -81,6 +81,19 @@ void write_planets(int timestep){
 
 // TODO 6. Calculate the change in velocity for p, caused by the interaction with q
 __device__ float2 calculate_velocity_change_planet(float4 p, float4 q){
+    float2 vChange;
+    float2 acc;
+
+    acc.x = q.x - p.x;
+    acc.y = q.y - p.y;
+
+    float dist = sqrt(acc.x*acc.x + acc.y*acc.y);
+    float cubed = dist*dist*dist;
+
+    vChange.x = dT*G*q.mass/cubed * dist.x;
+    vChange.y = dT*G*q.mass/cubed * dist.y;
+
+    return vChange;
 
 }
 
