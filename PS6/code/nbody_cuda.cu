@@ -79,7 +79,7 @@ void write_planets(int timestep){
     fclose(file);
 }
 
-// TODO 7. Calculate the change in velocity for p, caused by the interaction with q
+// TODO 6. Calculate the change in velocity for p, caused by the interaction with q
 __device__ float2 calculate_velocity_change_planet(float4 p, float4 q){
 
 }
@@ -118,6 +118,9 @@ int main(int argc, char** argv){
     // Main loop
     for(int t = 0; t < num_timesteps; t++){
         // TODO 2. Call kernels
+	update_velocities<<<num_blocks, BLOCK_SIZE>>>(planets_d, velocities_d, num_planets);
+	update_positions<<<num_blocks, BLOCK_SIZE>>>(planets_d, velocities_d, num_planets);
+
     }
 
     // TODO 3. Transfer data back to host
