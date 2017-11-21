@@ -3,6 +3,7 @@
 #include <math.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include <time.h>
 
 #define dT 0.2f
 #define G 0.6f
@@ -150,6 +151,8 @@ int main(int argc, char** argv){
     cudaMemcpy(velocities_d, velocities, sizeof(float2)*num_planets, cudaMemcpyHostToDevice);
     cudaMemcpy(planets_d, planets, sizeof(float4)*num_planets, cudaMemcpyHostToDevice);
 
+    clock_t start = clock();
+
     // Calculating the number of blocks
     int num_blocks = num_planets/BLOCK_SIZE + ((num_planets%BLOCK_SIZE == 0) ? 0 : 1);
 
@@ -160,6 +163,11 @@ int main(int argc, char** argv){
 	update_positions<<<num_blocks, BLOCK_SIZE>>>(planets_d, velocities_d, num_planets);
 
     }
+    cudaDeviceSynchronize();
+
+    clock_t stop = clock();
+
+    printf("Elapsed: %f seconds\n", (double)(stop-start)/ CLOCKS_PER_SEC);
 
     // TODO 3. Transfer data back to host
     cudaMemcpy(velocities, velocities_d, sizeof(float2)*num_planets, cudaMemcpyDeviceToHost);
