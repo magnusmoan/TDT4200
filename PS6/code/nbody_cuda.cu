@@ -122,7 +122,7 @@ __global__ void update_velocities(float4* planets, float2* velocities, int num_p
 	shared_planets[threadIdx.x] = planets[i + threadIdx.x];
 	__syncthreads();
 
-	float2 v = calculate_velocity_change_block(my_planet, shared_planets);
+	float2 v = calculate_velocity_change_block(planet, shared_planets);
 	velocities[id].x += v.x;
 	velocities[id].y += v.y;
 	__syncthreads();
