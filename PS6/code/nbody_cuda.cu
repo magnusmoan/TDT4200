@@ -35,6 +35,7 @@ void parse_args(int argc, char** argv){
 // Reads planets from planets.txt
 void read_planets(){
 
+    char* a;
     FILE* file = fopen("planets256.txt", "r");
     if(file == NULL){
         printf("'planets.txt' not found. Exiting\n");
@@ -42,14 +43,14 @@ void read_planets(){
     }
 
     char line[200];
-    fgets(line, 200, file);
+    a = fgets(line, 200, file);
     sscanf(line, "%d", &num_planets);
 
     planets = (float4*)malloc(sizeof(float4)*num_planets);
     velocities = (float2*)malloc(sizeof(float2)*num_planets);
 
     for(int p = 0; p < num_planets; p++){
-        fgets(line, 200, file);
+        a = fgets(line, 200, file);
         sscanf(line, "%f %f %f %f %f",
                 &planets[p].x,
                 &planets[p].y,
@@ -95,8 +96,8 @@ __device__ float2 calculate_velocity_change_planet(float4 p, float4 q){
     float dist = sqrt(acc.x*acc.x + acc.y*acc.y);
     float cubed = dist*dist*dist;
 
-    v1.x = dT*G*q.z/cubed * acc.x;
-    v1.y = dT*G*q.z/cubed * acc.y;
+    v1.x = (dT*G*q.z/cubed) * acc.x;
+    v1.y = (dT*G*q.z/cubed) * acc.y;
 
     return v1;
 
