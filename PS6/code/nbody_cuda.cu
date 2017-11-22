@@ -175,4 +175,9 @@ int main(int argc, char** argv){
 
     // Output
     write_planets(num_timesteps);
+
+    free(planets);
+    free(velocities);
+    cudaFree(planets_d);
+    cudaFree(velocities_d);
 }

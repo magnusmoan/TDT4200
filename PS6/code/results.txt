@@ -1,3 +1,19 @@
 Elapsed: 2.381569 seconds
 Elapsed: 7.084875 seconds
 Elapsed: 58.183018 seconds
+
+Elapsed: 9.171917 seconds
+Elapsed: 142.811915 seconds
+Elapsed: 2497.036889 seconds
+
+With 4096 planets
+With 128: Elapsed: 55.766337 seconds
+With 256: Elapsed: 57.345545 seconds
+With 32: Elapsed: 57.942380 seconds
+
+With 1024 planets
+With 32: Elapsed: 7.014021 seconds
+With 64: Elapsed: 7.084875 seconds
+With 128: Elapsed: 7.020249 seconds
+With 256: Elapsed: 6.798949, 6.839532, 6.980569 seconds
+

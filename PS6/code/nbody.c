@@ -49,7 +49,7 @@ void parse_args(int argc, char** argv){
 void read_planets(){
 
     char* a;
-    FILE* file = fopen("planets256.txt", "r");
+    FILE* file = fopen("planets4096.txt", "r");
     if(file == NULL){
         printf("'planets.txt' not found. Exiting\n");
         exit(-1);
