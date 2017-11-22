@@ -7,7 +7,7 @@
 
 #define dT 0.2f
 #define G 0.6f
-#define BLOCK_SIZE 128
+#define BLOCK_SIZE 64
 
 // Global variables
 int num_planets;
@@ -35,7 +35,7 @@ void parse_args(int argc, char** argv){
 // Reads planets from planets.txt
 void read_planets(){
 
-    FILE* file = fopen("planets1024.txt", "r");
+    FILE* file = fopen("planets256.txt", "r");
     if(file == NULL){
         printf("'planets.txt' not found. Exiting\n");
         exit(-1);
@@ -82,19 +82,23 @@ void write_planets(int timestep){
 
 // TODO 6. Calculate the change in velocity for p, caused by the interaction with q
 __device__ float2 calculate_velocity_change_planet(float4 p, float4 q){
-    float2 vChange;
+    float2 v1;
     float2 acc;
 
     acc.x = q.x - p.x;
     acc.y = q.y - p.y;
+    if(acc.x == 0 && acc.y == 0) {
+	float2 v2 = {0.0f, 0.0f};
+        return v2;
+    }
 
     float dist = sqrt(acc.x*acc.x + acc.y*acc.y);
     float cubed = dist*dist*dist;
 
-    vChange.x = dT*G*q.z/cubed * acc.x;
-    vChange.y = dT*G*q.z/cubed * acc.y;
+    v1.x = dT*G*q.z/cubed * acc.x;
+    v1.y = dT*G*q.z/cubed * acc.y;
 
-    return vChange;
+    return v1;
 
 }
 
