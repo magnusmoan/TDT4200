@@ -7,7 +7,7 @@
 
 #define dT 0.2f
 #define G 0.6f
-#define BLOCK_SIZE 64
+#define BLOCK_SIZE 128
 
 // Global variables
 int num_planets;
@@ -35,7 +35,7 @@ void parse_args(int argc, char** argv){
 // Reads planets from planets.txt
 void read_planets(){
 
-    FILE* file = fopen("planets256.txt", "r");
+    FILE* file = fopen("planets1024.txt", "r");
     if(file == NULL){
         printf("'planets.txt' not found. Exiting\n");
         exit(-1);
