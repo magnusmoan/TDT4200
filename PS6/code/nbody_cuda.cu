@@ -88,7 +88,7 @@ __device__ float2 calculate_velocity_change_planet(float4 p, float4 q){
 
     acc.x = q.x - p.x;
     acc.y = q.y - p.y;
-    if(acc.x == 0 && acc.y == 0) {
+    if(abs(acc.x) <= 0.005 && abs(acc.y) <= 0.005) {
 	float2 v2 = {0.0f, 0.0f};
         return v2;
     }
@@ -156,8 +156,6 @@ int main(int argc, char** argv){
     cudaMemcpy(velocities_d, velocities, sizeof(float2)*num_planets, cudaMemcpyHostToDevice);
     cudaMemcpy(planets_d, planets, sizeof(float4)*num_planets, cudaMemcpyHostToDevice);
 
-    printf("%f %f", velocities[0].x, velocities[0].y);
-
     clock_t start = clock();
 
     // Calculating the number of blocks
@@ -179,7 +177,6 @@ int main(int argc, char** argv){
     // TODO 3. Transfer data back to host
     cudaMemcpy(velocities, velocities_d, sizeof(float2)*num_planets, cudaMemcpyDeviceToHost);
     cudaMemcpy(planets, planets_d, sizeof(float4)*num_planets, cudaMemcpyDeviceToHost);
-    printf("%f %f", velocities[0].x, velocities[0].y);
 
     // Output
     write_planets(num_timesteps);
